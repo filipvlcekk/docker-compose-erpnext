@@ -3,6 +3,7 @@ services:
     image: frappe/erpnext-nginx:${ERPNEXT_VERSION}
     restart: on-failure
     environment:
+      - BACKEND=erpnext-python:8000
       - FRAPPE_PY=erpnext-python
       - FRAPPE_PY_PORT=8000
       - FRAPPE_SOCKETIO=frappe-socketio
@@ -52,8 +53,7 @@ services:
     restart: on-failure
     command: ["bench", "worker"]
     depends_on:
-      - redis-queue
-      - redis-cache
+      - site-creator
     volumes:
       - sites-vol:/home/frappe/frappe-bench/sites:rw
       - logs-vol:/home/frappe/frappe-bench/logs:rw
@@ -65,8 +65,7 @@ services:
     environment:
       - WORKER_TYPE=short
     depends_on:
-      - redis-queue
-      - redis-cache
+      - site-creator
     volumes:
       - sites-vol:/home/frappe/frappe-bench/sites:rw
       - logs-vol:/home/frappe/frappe-bench/logs:rw
@@ -78,8 +77,7 @@ services:
     environment:
       - WORKER_TYPE=long
     depends_on:
-      - redis-queue
-      - redis-cache
+      - site-creator
     volumes:
       - sites-vol:/home/frappe/frappe-bench/sites:rw
 
@@ -88,8 +86,7 @@ services:
     restart: on-failure
     command: ["bench", "schedule"]
     depends_on:
-      - redis-queue
-      - redis-cache
+      - site-creator
     volumes:
       - sites-vol:/home/frappe/frappe-bench/sites:rw
       - logs-vol:/home/frappe/frappe-bench/logs:rw
