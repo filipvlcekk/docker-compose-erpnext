@@ -20,8 +20,8 @@ services:
     volumes:
       - sites-vol:/var/www/html/sites:rw
       - assets-vol:/assets:rw
-    ports:
-      - "80:80"
+    # Sekce 'ports' byla záměrně odstraněna, aby se předešlo konfliktu.
+    # O přesměrování se postará reverzní proxy v Dokploy.
 
   erpnext-python:
     image: frappe/erpnext-worker:${ERPNEXT_VERSION}
