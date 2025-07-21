@@ -3,7 +3,6 @@ services:
     image: frappe/erpnext-nginx:${ERPNEXT_VERSION}
     restart: on-failure
     environment:
-      - BACKEND=erpnext-python:8000
       - FRAPPE_PY=erpnext-python
       - FRAPPE_PY_PORT=8000
       - FRAPPE_SOCKETIO=frappe-socketio
@@ -21,8 +20,6 @@ services:
     volumes:
       - sites-vol:/var/www/html/sites:rw
       - assets-vol:/assets:rw
-    # Sekce 'ports' byla záměrně odstraněna, aby se předešlo konfliktu.
-    # O přesměrování se postará reverzní proxy v Dokploy.
 
   erpnext-python:
     image: frappe/erpnext-worker:${ERPNEXT_VERSION}
@@ -42,6 +39,8 @@ services:
   frappe-socketio:
     image: frappe/frappe-socketio:${FRAPPE_VERSION}
     restart: on-failure
+    environment:
+      - REDIS_SOCKETIO=redis-socketio:6379
     depends_on:
       - redis-socketio
     volumes:
@@ -52,6 +51,11 @@ services:
     image: frappe/erpnext-worker:${ERPNEXT_VERSION}
     restart: on-failure
     command: ["bench", "worker"]
+    environment:
+      - MARIADB_HOST=${MARIADB_HOST}
+      - REDIS_CACHE=redis-cache:6379
+      - REDIS_QUEUE=redis-queue:6379
+      - REDIS_SOCKETIO=redis-socketio:6379
     depends_on:
       - site-creator
     volumes:
@@ -63,6 +67,10 @@ services:
     restart: on-failure
     command: ["bench", "worker"]
     environment:
+      - MARIADB_HOST=${MARIADB_HOST}
+      - REDIS_CACHE=redis-cache:6379
+      - REDIS_QUEUE=redis-queue:6379
+      - REDIS_SOCKETIO=redis-socketio:6379
       - WORKER_TYPE=short
     depends_on:
       - site-creator
@@ -75,6 +83,10 @@ services:
     restart: on-failure
     command: ["bench", "worker"]
     environment:
+      - MARIADB_HOST=${MARIADB_HOST}
+      - REDIS_CACHE=redis-cache:6379
+      - REDIS_QUEUE=redis-queue:6379
+      - REDIS_SOCKETIO=redis-socketio:6379
       - WORKER_TYPE=long
     depends_on:
       - site-creator
@@ -85,6 +97,11 @@ services:
     image: frappe/erpnext-worker:${ERPNEXT_VERSION}
     restart: on-failure
     command: ["bench", "schedule"]
+    environment:
+      - MARIADB_HOST=${MARIADB_HOST}
+      - REDIS_CACHE=redis-cache:6379
+      - REDIS_QUEUE=redis-queue:6379
+      - REDIS_SOCKETIO=redis-socketio:6379
     depends_on:
       - site-creator
     volumes:
