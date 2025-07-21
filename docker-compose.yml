@@ -1,6 +1,3 @@
-# Verze souboru, doporučeno pro lepší kompatibilitu
-version: '3.8'
-
 services:
   erpnext-nginx:
     image: frappe/erpnext-nginx:${ERPNEXT_VERSION}
@@ -53,7 +50,7 @@ services:
   erpnext-worker-default:
     image: frappe/erpnext-worker:${ERPNEXT_VERSION}
     restart: on-failure
-    command: ["worker"]
+    command: ["bench", "worker"]
     depends_on:
       - redis-queue
       - redis-cache
@@ -64,7 +61,7 @@ services:
   erpnext-worker-short:
     image: frappe/erpnext-worker:${ERPNEXT_VERSION}
     restart: on-failure
-    command: ["worker"]
+    command: ["bench", "worker"]
     environment:
       - WORKER_TYPE=short
     depends_on:
@@ -77,7 +74,7 @@ services:
   erpnext-worker-long:
     image: frappe/erpnext-worker:${ERPNEXT_VERSION}
     restart: on-failure
-    command: ["worker"]
+    command: ["bench", "worker"]
     environment:
       - WORKER_TYPE=long
     depends_on:
@@ -89,7 +86,7 @@ services:
   erpnext-schedule:
     image: frappe/erpnext-worker:${ERPNEXT_VERSION}
     restart: on-failure
-    command: ["schedule"]
+    command: ["bench", "schedule"]
     depends_on:
       - redis-queue
       - redis-cache
@@ -139,6 +136,7 @@ services:
       - sites-vol:/home/frappe/frappe-bench/sites:rw
       - logs-vol:/home/frappe/frappe-bench/logs:rw
     command:
+      - "bench"
       - "new-site"
       - "${SITE_NAME}"
       - "--admin-password"
