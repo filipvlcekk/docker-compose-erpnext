@@ -1,3 +1,6 @@
+# Verze souboru, doporučeno pro lepší kompatibilitu
+version: '3.8'
+
 services:
   erpnext-nginx:
     image: frappe/erpnext-nginx:${ERPNEXT_VERSION}
@@ -50,7 +53,7 @@ services:
   erpnext-worker-default:
     image: frappe/erpnext-worker:${ERPNEXT_VERSION}
     restart: on-failure
-    command: worker
+    command: ["worker"]
     depends_on:
       - redis-queue
       - redis-cache
@@ -61,7 +64,7 @@ services:
   erpnext-worker-short:
     image: frappe/erpnext-worker:${ERPNEXT_VERSION}
     restart: on-failure
-    command: worker
+    command: ["worker"]
     environment:
       - WORKER_TYPE=short
     depends_on:
@@ -74,7 +77,7 @@ services:
   erpnext-worker-long:
     image: frappe/erpnext-worker:${ERPNEXT_VERSION}
     restart: on-failure
-    command: worker
+    command: ["worker"]
     environment:
       - WORKER_TYPE=long
     depends_on:
@@ -86,7 +89,7 @@ services:
   erpnext-schedule:
     image: frappe/erpnext-worker:${ERPNEXT_VERSION}
     restart: on-failure
-    command: schedule
+    command: ["schedule"]
     depends_on:
       - redis-queue
       - redis-cache
@@ -124,7 +127,6 @@ services:
   site-creator:
     image: frappe/erpnext-worker:${ERPNEXT_VERSION}
     restart: "no"
-    command: new
     depends_on:
       - erpnext-python
     environment:
@@ -136,6 +138,17 @@ services:
     volumes:
       - sites-vol:/home/frappe/frappe-bench/sites:rw
       - logs-vol:/home/frappe/frappe-bench/logs:rw
+    command:
+      - "new-site"
+      - "${SITE_NAME}"
+      - "--admin-password"
+      - "${ADMIN_PASSWORD}"
+      - "--mariadb-root-username"
+      - "${DB_ROOT_USER}"
+      - "--mariadb-root-password"
+      - "${MYSQL_ROOT_PASSWORD}"
+      - "--install-app"
+      - "erpnext"
 
 # Top-level volumes definition
 volumes:
