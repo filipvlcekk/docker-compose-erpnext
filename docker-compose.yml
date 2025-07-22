@@ -56,13 +56,18 @@ services:
       - VIRTUAL_HOST=${SITES}
       - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL}
       - SKIP_NGINX_TEMPLATE_GENERATION=${SKIP_NGINX_TEMPLATE_GENERATION}
-      - BACKEND=erpnext-python:8000
     depends_on:
-      - erpnext-python
-      - frappe-socketio
+      erpnext-python:
+        condition: service_started
+      frappe-socketio:
+        condition: service_started
     volumes:
       - sites-vol:/var/www/html/sites:rw
       - assets-vol:/assets:rw
+    command:
+      - "sh"
+      - "-c"
+      - "echo 'Waiting for backend services...' && sleep 15 && /docker-entrypoint.sh nginx -g 'daemon off;'"
 
   erpnext-python:
     image: frappe/erpnext-worker:${ERPNEXT_VERSION}
