@@ -1,4 +1,49 @@
 services:
+  configurator:
+    image: frappe/erpnext-worker:${ERPNEXT_VERSION}
+    restart: "no"
+    volumes:
+      - sites-vol:/home/frappe/frappe-bench/sites
+    command:
+      - "sh"
+      - "-c"
+      - |
+        echo "Waiting for filesystems to be ready..."
+        sleep 5
+        echo "Creating common_site_config.json..."
+        echo '{
+          "redis_cache": "redis://redis-cache:6379",
+          "redis_queue": "redis://redis-queue:6379",
+          "redis_socketio": "redis://redis-socketio:6379"
+        }' > /home/frappe/frappe-bench/sites/common_site_config.json
+        echo "Config file created."
+
+  site-creator:
+    image: frappe/erpnext-worker:${ERPNEXT_VERSION}
+    restart: "no"
+    depends_on:
+      configurator:
+        condition: service_completed_successfully
+      mariadb:
+        condition: service_started
+    environment:
+      - MARIADB_HOST=${MARIADB_HOST}
+      - REDIS_CACHE=redis-cache:6379
+      - REDIS_QUEUE=redis-queue:6379
+      - REDIS_SOCKETIO=redis-socketio:6379
+      - SITE_NAME=${SITE_NAME}
+      - DB_ROOT_USER=${DB_ROOT_USER}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - INSTALL_APPS=${INSTALL_APPS}
+    volumes:
+      - sites-vol:/home/frappe/frappe-bench/sites:rw
+      - logs-vol:/home/frappe/frappe-bench/logs:rw
+    command:
+      - "sh"
+      - "-c"
+      - "echo 'Waiting for database to be ready...' && sleep 20 && echo 'Database should be ready, starting site creation...' && bench new-site ${SITE_NAME} --db-host ${MARIADB_HOST} --admin-password ${ADMIN_PASSWORD} --mariadb-root-username ${DB_ROOT_USER} --mariadb-root-password ${MYSQL_ROOT_PASSWORD} --install-app erpnext"
+
   erpnext-nginx:
     image: frappe/erpnext-nginx:${ERPNEXT_VERSION}
     restart: on-failure
@@ -7,6 +52,14 @@ services:
       - FRAPPE_PY_PORT=8000
       - FRAPPE_SOCKETIO=frappe-socketio
       - SOCKETIO_PORT=9000
+      - LETSENCRYPT_HOST=${SITES}
+      - VIRTUAL_HOST=${SITES}
+      - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL}
+      - SKIP_NGINX_TEMPLATE_GENERATION=${SKIP_NGINX_TEMPLATE_GENERATION}
+      - BACKEND=erpnext-python:8000
+    depends_on:
+      - erpnext-python
+      - frappe-socketio
     volumes:
       - sites-vol:/var/www/html/sites:rw
       - assets-vol:/assets:rw
@@ -14,6 +67,9 @@ services:
   erpnext-python:
     image: frappe/erpnext-worker:${ERPNEXT_VERSION}
     restart: on-failure
+    depends_on:
+      site-creator:
+        condition: service_completed_successfully
     volumes:
       - sites-vol:/home/frappe/frappe-bench/sites:rw
       - assets-vol:/home/frappe/frappe-bench/sites/assets:rw
@@ -21,6 +77,9 @@ services:
   frappe-socketio:
     image: frappe/frappe-socketio:${FRAPPE_VERSION}
     restart: on-failure
+    depends_on:
+      site-creator:
+        condition: service_completed_successfully
     volumes:
       - sites-vol:/home/frappe/frappe-bench/sites:rw
       - logs-vol:/home/frappe/frappe-bench/logs:rw
@@ -29,6 +88,9 @@ services:
     image: frappe/erpnext-worker:${ERPNEXT_VERSION}
     restart: on-failure
     command: ["bench", "worker"]
+    depends_on:
+      site-creator:
+        condition: service_completed_successfully
     volumes:
       - sites-vol:/home/frappe/frappe-bench/sites:rw
       - logs-vol:/home/frappe/frappe-bench/logs:rw
@@ -39,6 +101,9 @@ services:
     command: ["bench", "worker"]
     environment:
       - WORKER_TYPE=short
+    depends_on:
+      site-creator:
+        condition: service_completed_successfully
     volumes:
       - sites-vol:/home/frappe/frappe-bench/sites:rw
       - logs-vol:/home/frappe/frappe-bench/logs:rw
@@ -49,6 +114,9 @@ services:
     command: ["bench", "worker"]
     environment:
       - WORKER_TYPE=long
+    depends_on:
+      site-creator:
+        condition: service_completed_successfully
     volumes:
       - sites-vol:/home/frappe/frappe-bench/sites:rw
 
@@ -56,6 +124,9 @@ services:
     image: frappe/erpnext-worker:${ERPNEXT_VERSION}
     restart: on-failure
     command: ["bench", "schedule"]
+    depends_on:
+      site-creator:
+        condition: service_completed_successfully
     volumes:
       - sites-vol:/home/frappe/frappe-bench/sites:rw
       - logs-vol:/home/frappe/frappe-bench/logs:rw
