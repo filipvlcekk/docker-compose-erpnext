@@ -74,7 +74,7 @@ services:
       site-creator:
         condition: service_completed_successfully
     ports:
-      - "22841:80"
+      - "2284:80"
     volumes:
       - sites-vol:/var/www/html/sites:rw
       - assets-vol:/assets:rw
