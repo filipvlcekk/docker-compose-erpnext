@@ -48,14 +48,14 @@ services:
     image: frappe/erpnext-nginx:${ERPNEXT_VERSION}
     restart: on-failure
     environment:
+      - FRAPPE_SITE_NAME_HEADER=${SITE_NAME}
+      - UPSTREAM_REAL_IP_ADDRESS=127.0.0.1
+      - UPSTREAM_REAL_IP_HEADER=X-Forwarded-For
+      - UPSTREAM_REAL_IP_RECURSIVE=on
       - FRAPPE_PY=erpnext-python
       - FRAPPE_PY_PORT=8000
       - FRAPPE_SOCKETIO=frappe-socketio
       - SOCKETIO_PORT=9000
-      - LETSENCRYPT_HOST=${SITES}
-      - VIRTUAL_HOST=${SITES}
-      - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL}
-      - SKIP_NGINX_TEMPLATE_GENERATION=${SKIP_NGINX_TEMPLATE_GENERATION}
     depends_on:
       erpnext-python:
         condition: service_started
