@@ -64,6 +64,12 @@ services:
     volumes:
       - sites-vol:/var/www/html/sites:rw
       - assets-vol:/assets:rw
+    # --- ZAČÁTEK DOČASNÉ ZMĚNY PRO LADĚNÍ ---
+    command:
+      - "sh"
+      - "-c"
+      - "echo '--- DEBUG MODE ---' && echo 'Environment variables inside container:' && printenv && echo '--- END OF ENV VARS ---' && echo 'Container is now sleeping...' && sleep infinity"
+    # --- KONEC DOČASNÉ ZMĚNY PRO LADĚNÍ ---
 
   erpnext-python:
     image: frappe/erpnext-worker:${ERPNEXT_VERSION}
