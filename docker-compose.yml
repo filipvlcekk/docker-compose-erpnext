@@ -20,6 +20,7 @@ services:
     networks:
       - erpnext-network
 
+  # --- ZMĚNA V TÉTO SLUŽBĚ ---
   site-creator:
     image: frappe/erpnext-worker:${ERPNEXT_VERSION}
     restart: "no"
@@ -41,9 +42,19 @@ services:
     command:
       - "sh"
       - "-c"
-      - "echo 'Waiting for database...' && sleep 30 && echo 'Starting site creation...' && bench new-site ${SITE_NAME} --db-host ${MARIADB_HOST} --admin-password ${ADMIN_PASSWORD} --mariadb-root-username ${DB_ROOT_USER} --mariadb-root-password ${MYSQL_ROOT_PASSWORD} --install-app erpnext --set-default"
-    networks:
-      - erpnext-network
+      - |
+        # Zkontroluj, zda adresář stránky již existuje
+        if [ -d "/home/frappe/frappe-bench/sites/${SITE_NAME}" ]; then
+          echo "Site ${SITE_NAME} already exists, skipping creation."
+          # Ukonči s úspěchem (exit 0), aby ostatní služby mohly pokračovat
+          exit 0
+        else
+          echo "Site ${SITE_NAME} does not exist. Creating..."
+          # Počkej na databázi a vytvoř stránku
+          echo 'Waiting for database...' && sleep 30 && echo 'Starting site creation...' && \
+          bench new-site ${SITE_NAME} --db-host ${MARIADB_HOST} --admin-password ${ADMIN_PASSWORD} --mariadb-root-username ${DB_ROOT_USER} --mariadb-root-password ${MYSQL_ROOT_PASSWORD} --install-app erpnext --set-default
+        fi
+  # --- KONEC ZMĚNY ---
 
   erpnext-nginx:
     image: frappe/erpnext-nginx:${ERPNEXT_VERSION}
@@ -62,10 +73,8 @@ services:
     depends_on:
       site-creator:
         condition: service_completed_successfully
-    # ---OPRAVA: PŘIDÁNÍ MAPOVÁNÍ PORTŮ ---
     ports:
       - "22841:80"
-    # --- KONEC OPRAVY ---
     volumes:
       - sites-vol:/var/www/html/sites:rw
       - assets-vol:/assets:rw
