@@ -64,10 +64,6 @@ services:
     volumes:
       - sites-vol:/var/www/html/sites:rw
       - assets-vol:/assets:rw
-    command:
-      - "sh"
-      - "-c"
-      - "echo 'Waiting for backend services...' && sleep 15 && /docker-entrypoint.sh nginx -g 'daemon off;'"
 
   erpnext-python:
     image: frappe/erpnext-worker:${ERPNEXT_VERSION}
