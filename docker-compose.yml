@@ -28,9 +28,6 @@ services:
         condition: service_started
     environment:
       - MARIADB_HOST=${MARIADB_HOST}
-      - REDIS_CACHE=redis-cache:6379
-      - REDIS_QUEUE=redis-queue:6379
-      - REDIS_SOCKETIO=redis-socketio:6379
       - SITE_NAME=${SITE_NAME}
       - DB_ROOT_USER=${DB_ROOT_USER}
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
@@ -42,46 +39,30 @@ services:
     command:
       - "sh"
       - "-c"
-      - "echo 'Waiting for database to be ready...' && sleep 90 && echo 'Database should be ready, starting site creation...' && bench new-site ${SITE_NAME} --db-host ${MARIADB_HOST} --admin-password ${ADMIN_PASSWORD} --mariadb-root-username ${DB_ROOT_USER} --mariadb-root-password ${MYSQL_ROOT_PASSWORD} --install-app erpnext"
+      - "echo 'Waiting for database...' && sleep 30 && echo 'Starting site creation...' && bench new-site ${SITE_NAME} --db-host ${MARIADB_HOST} --admin-password ${ADMIN_PASSWORD} --mariadb-root-username ${DB_ROOT_USER} --mariadb-root-password ${MYSQL_ROOT_PASSWORD} --install-app erpnext --set-default"
 
   erpnext-nginx:
     image: frappe/erpnext-nginx:${ERPNEXT_VERSION}
     restart: on-failure
     environment:
       - FRAPPE_SITE_NAME_HEADER=${SITE_NAME}
-      - UPSTREAM_REAL_IP_ADDRESS=127.0.0.1
-      - UPSTREAM_REAL_IP_HEADER=X-Forwarded-For
-      - UPSTREAM_REAL_IP_RECURSIVE=on
       - FRAPPE_PY=erpnext-python
       - FRAPPE_PY_PORT=8000
       - FRAPPE_SOCKETIO=frappe-socketio
       - SOCKETIO_PORT=9000
+      # --- FINÁLNÍ OPRAVA: PŘÍMÉ NASTAVENÍ PROMENNÝCH ---
+      - BACKEND=http://erpnext-python:8000
+      - SOCKETIO=http://frappe-socketio:9000
+      # --- KONEC FINÁLNÍ OPRAVY ---
+      - UPSTREAM_REAL_IP_ADDRESS=127.0.0.1
+      - UPSTREAM_REAL_IP_HEADER=X-Forwarded-For
+      - UPSTREAM_REAL_IP_RECURSIVE=on
     depends_on:
-      # --- ZAČÁTEK ZMĚNY ---
       site-creator:
         condition: service_completed_successfully
-      # --- KONEC ZMĚNY ---
-      erpnext-python:
-        condition: service_started
-      frappe-socketio:
-        condition: service_started
     volumes:
       - sites-vol:/var/www/html/sites:rw
       - assets-vol:/assets:rw
-     # --- ZAČÁTEK DOČASNÉ ZMĚNY PRO LADĚNÍ ---
-    command:
-      - "sh"
-      - "-c"
-      - |
-        echo "--- NGINX DEBUG MODE ---"
-        echo "Waiting for 30 seconds to ensure all volumes are synced..."
-        sleep 30
-        echo "Listing contents of /var/www/html/sites/:"
-        ls -la /var/www/html/sites/
-        echo "--- END OF LISTING ---"
-        echo "Container is now sleeping..."
-        sleep infinity
-    # --- KONEC DOČASNÉ ZMĚNY PRO LADĚNÍ ---
 
   erpnext-python:
     image: frappe/erpnext-worker:${ERPNEXT_VERSION}
