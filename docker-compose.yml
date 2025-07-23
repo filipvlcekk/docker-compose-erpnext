@@ -68,6 +68,20 @@ services:
     volumes:
       - sites-vol:/var/www/html/sites:rw
       - assets-vol:/assets:rw
+     # --- ZAČÁTEK DOČASNÉ ZMĚNY PRO LADĚNÍ ---
+    command:
+      - "sh"
+      - "-c"
+      - |
+        echo "--- NGINX DEBUG MODE ---"
+        echo "Waiting for 30 seconds to ensure all volumes are synced..."
+        sleep 30
+        echo "Listing contents of /var/www/html/sites/:"
+        ls -la /var/www/html/sites/
+        echo "--- END OF LISTING ---"
+        echo "Container is now sleeping..."
+        sleep infinity
+    # --- KONEC DOČASNÉ ZMĚNY PRO LADĚNÍ ---
 
   erpnext-python:
     image: frappe/erpnext-worker:${ERPNEXT_VERSION}
