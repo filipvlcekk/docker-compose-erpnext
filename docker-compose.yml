@@ -17,7 +17,7 @@ services:
           "redis_socketio": "redis://redis-socketio:6379"
         }' > /home/frappe/frappe-bench/sites/common_site_config.json
         echo "Config file created."
-    networks: # PŘIDÁNO
+    networks:
       - erpnext-network
 
   site-creator:
@@ -42,7 +42,7 @@ services:
       - "sh"
       - "-c"
       - "echo 'Waiting for database...' && sleep 30 && echo 'Starting site creation...' && bench new-site ${SITE_NAME} --db-host ${MARIADB_HOST} --admin-password ${ADMIN_PASSWORD} --mariadb-root-username ${DB_ROOT_USER} --mariadb-root-password ${MYSQL_ROOT_PASSWORD} --install-app erpnext --set-default"
-    networks: # PŘIDÁNO
+    networks:
       - erpnext-network
 
   erpnext-nginx:
@@ -56,16 +56,20 @@ services:
       - SOCKETIO_PORT=9000
       - BACKEND=erpnext-python:8000
       - SOCKETIO=frappe-socketio:9000
-      - UPSTREAM_REAL_IP_ADDRESS=127.0.0.1
+      - UPSTREAM_REAL_IP_ADDRESS=172.16.0.0/12
       - UPSTREAM_REAL_IP_HEADER=X-Forwarded-For
       - UPSTREAM_REAL_IP_RECURSIVE=on
     depends_on:
       site-creator:
         condition: service_completed_successfully
+    # ---OPRAVA: PŘIDÁNÍ MAPOVÁNÍ PORTŮ ---
+    ports:
+      - "22841:80"
+    # --- KONEC OPRAVY ---
     volumes:
       - sites-vol:/var/www/html/sites:rw
       - assets-vol:/assets:rw
-    networks: # PŘIDÁNO
+    networks:
       - erpnext-network
 
   erpnext-python:
@@ -77,7 +81,7 @@ services:
     volumes:
       - sites-vol:/home/frappe/frappe-bench/sites:rw
       - assets-vol:/home/frappe/frappe-bench/sites/assets:rw
-    networks: # PŘIDÁNO
+    networks:
       - erpnext-network
 
   frappe-socketio:
@@ -89,7 +93,7 @@ services:
     volumes:
       - sites-vol:/home/frappe/frappe-bench/sites:rw
       - logs-vol:/home/frappe/frappe-bench/logs:rw
-    networks: # PŘIDÁNO
+    networks:
       - erpnext-network
 
   erpnext-worker-default:
@@ -102,7 +106,7 @@ services:
     volumes:
       - sites-vol:/home/frappe/frappe-bench/sites:rw
       - logs-vol:/home/frappe/frappe-bench/logs:rw
-    networks: # PŘIDÁNO
+    networks:
       - erpnext-network
 
   erpnext-worker-short:
@@ -117,7 +121,7 @@ services:
     volumes:
       - sites-vol:/home/frappe/frappe-bench/sites:rw
       - logs-vol:/home/frappe/frappe-bench/logs:rw
-    networks: # PŘIDÁNO
+    networks:
       - erpnext-network
 
   erpnext-worker-long:
@@ -131,7 +135,7 @@ services:
         condition: service_completed_successfully
     volumes:
       - sites-vol:/home/frappe/frappe-bench/sites:rw
-    networks: # PŘIDÁNO
+    networks:
       - erpnext-network
 
   erpnext-schedule:
@@ -144,7 +148,7 @@ services:
     volumes:
       - sites-vol:/home/frappe/frappe-bench/sites:rw
       - logs-vol:/home/frappe/frappe-bench/logs:rw
-    networks: # PŘIDÁNO
+    networks:
       - erpnext-network
 
   redis-cache:
@@ -152,7 +156,7 @@ services:
     restart: on-failure
     volumes:
       - redis-cache-vol:/data
-    networks: # PŘIDÁNO
+    networks:
       - erpnext-network
 
   redis-queue:
@@ -160,7 +164,7 @@ services:
     restart: on-failure
     volumes:
       - redis-queue-vol:/data
-    networks: # PŘIDÁNO
+    networks:
       - erpnext-network
 
   redis-socketio:
@@ -168,7 +172,7 @@ services:
     restart: on-failure
     volumes:
       - redis-socketio-vol:/data
-    networks: # PŘIDÁNO
+    networks:
       - erpnext-network
 
   mariadb:
@@ -179,7 +183,7 @@ services:
     volumes:
       - ./installation/frappe-mariadb.cnf:/etc/mysql/conf.d/frappe.cnf
       - mariadb-vol:/var/lib/mysql
-    networks: # PŘIDÁNO
+    networks:
       - erpnext-network
 
 volumes:
@@ -191,7 +195,6 @@ volumes:
   sites-vol:
   logs-vol:
 
-# --- PŘIDÁNA DEFINICE VLASTNÍ SÍTĚ ---
 networks:
   erpnext-network:
     driver: bridge
