@@ -50,9 +50,9 @@ services:
       - FRAPPE_PY_PORT=8000
       - FRAPPE_SOCKETIO=frappe-socketio
       - SOCKETIO_PORT=9000
-      # --- FINÁLNÍ OPRAVA: PŘÍMÉ NASTAVENÍ PROMENNÝCH ---
-      - BACKEND=http://erpnext-python:8000
-      - SOCKETIO=http://frappe-socketio:9000
+      # --- FINÁLNÍ OPRAVA: PŘÍMÉ NASTAVENÍ PROMENNÝCH BEZ PROTOKOLU ---
+      - BACKEND=erpnext-python:8000
+      - SOCKETIO=frappe-socketio:9000
       # --- KONEC FINÁLNÍ OPRAVY ---
       - UPSTREAM_REAL_IP_ADDRESS=127.0.0.1
       - UPSTREAM_REAL_IP_HEADER=X-Forwarded-For
