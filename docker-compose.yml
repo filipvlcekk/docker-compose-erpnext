@@ -73,13 +73,17 @@ services:
     depends_on:
       site-creator:
         condition: service_completed_successfully
-    ports:
-      - "2284:80"
+    #ports:
+      #- "2284:80"
     volumes:
       - sites-vol:/var/www/html/sites:rw
       - assets-vol:/assets:rw
-    networks:
-      - erpnext-network
+    # networks:
+     # - erpnext-network
+     # --- ZAČÁTEK ZMĚNY PRO LADĚNÍ ---
+    network_mode: "host" # Kontejner bude sdílet síť přímo se Synology
+    # SEKCE "ports" A "networks" JSOU ZÁMĚRNĚ ODSTRANĚNY PRO TENTO KONTEJNER
+    # --- KONEC ZMĚNY PRO LADĚNÍ ---
 
   erpnext-python:
     image: frappe/erpnext-worker:${ERPNEXT_VERSION}
